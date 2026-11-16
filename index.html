@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Musik-Trainer 5f</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Music&text=%F0%9D%84%9E&display=swap">
+<style>
+/* Layout: eine schmale Spalte wie ein Handyspiel; Übersicht mit Spielkarten, darunter der eigene Lernstand. */
+:root{
+  --bg:#f1f4fc; --card:#ffffff; --ink:#17203d; --muted:#586283; --line:#d3daee;
+  --blue:#2c50cf; --onblue:#ffffff; --soft:#e3e9fb; --sun:#ffc531; --onsun:#2b2100;
+  --ok:#17855a; --okbg:#dcf4e8; --bad:#c43d30; --badbg:#fbe3df;
+  --keyw:#fffdf6; --keyb:#1c1d26; --onkey:#17203d;
+  --display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1429; --card:#1a2142; --ink:#eef1fc; --muted:#a6b0d0; --line:#2e3864;
+  --blue:#8ba4ff; --onblue:#0f1429; --soft:#232c56; --sun:#ffc531; --onsun:#2b2100;
+  --ok:#55d6a4; --okbg:#143a30; --bad:#ff8b7c; --badbg:#47201f;
+  --keyw:#fffdf6; --keyb:#1c1d26; --onkey:#17203d; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0f1429; --card:#1a2142; --ink:#eef1fc; --muted:#a6b0d0; --line:#2e3864;
+  --blue:#8ba4ff; --onblue:#0f1429; --soft:#232c56; --sun:#ffc531; --onsun:#2b2100;
+  --ok:#55d6a4; --okbg:#143a30; --bad:#ff8b7c; --badbg:#47201f;
+  --keyw:#fffdf6; --keyb:#1c1d26; --onkey:#17203d; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:2rem} h2{font-size:1.3rem} h3{font-size:1.1rem}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+
+/* Kopf */
+.top{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-weight:800;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.count{display:inline-block;align-self:flex-start;background:var(--sun);color:var(--onsun);font-weight:800;padding:4px 12px;border-radius:999px;font-size:.9rem}
+
+/* Spielkarten */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:420px){.grid{grid-template-columns:1fr}}
+.tile{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px 16px;text-align:left;display:flex;flex-direction:column;gap:4px;min-height:112px;transition:transform .12s,border-color .12s}
+.tile:hover{border-color:var(--blue);transform:translateY(-2px)}
+.tile .ic{font-size:1.6rem;line-height:1}
+.tile .t{font-family:var(--display);font-weight:600;font-size:1.15rem}
+.tile .d{color:var(--muted);font-size:.9rem;flex:1}
+.stars{letter-spacing:2px;font-size:1.05rem;color:var(--sun)}
+.stars .off{color:var(--line)}
+.tile.free{background:var(--soft);border-color:transparent}
+
+/* Lernstand */
+.panel{background:var(--card);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.bar-row{display:grid;grid-template-columns:minmax(0,9.5em) 1fr auto;gap:10px;align-items:center;font-size:.92rem}
+.bar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:99px}
+.bar-row b{font-variant-numeric:tabular-nums;min-width:3.2em;text-align:right}
+.tip{background:var(--soft);border-radius:12px;padding:10px 12px}
+ul.plain{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{color:var(--blue);font-weight:700;background:var(--soft);padding:6px 12px;border-radius:999px;text-decoration:none}
+.ghost{background:none;border:2px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:700;min-height:44px}
+
+/* Spiel */
+.playhead{display:flex;align-items:center;gap:12px}
+.playhead .bar{flex:1;height:12px}
+.playhead .bar i{background:var(--sun);transition:width .25s}
+.streak{font-weight:800;color:var(--blue);min-height:1.4em}
+.prompt{font-family:var(--display);font-weight:500;font-size:1.3rem;line-height:1.25;text-wrap:balance}
+.stage{display:flex;flex-direction:column;gap:16px}
+.visual{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
+.play{background:var(--blue);color:var(--onblue);border:none;border-radius:14px;padding:12px 18px;font-weight:800;min-height:52px;min-width:8.5em}
+.play:active{transform:scale(.97)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opts.one{grid-template-columns:1fr}
+.opts.seven{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.opt{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px 10px;min-height:54px;font-weight:700;text-align:center;overflow-wrap:anywhere}
+.opts.seven .opt{padding:10px 0;font-family:var(--display);font-size:1.2rem}
+.opt:not(:disabled):hover{border-color:var(--blue)}
+.opt.right{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.opt.wrong{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.grp{display:grid;grid-template-columns:minmax(0,6.4em) 1fr 1fr;gap:8px;align-items:center}
+.grp span{font-weight:800;font-size:.85rem;color:var(--muted)}
+.fb{border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.fb.ok{background:var(--okbg)} .fb.no{background:var(--badbg)}
+.fb strong{font-family:var(--display);font-size:1.2rem}
+.fb.ok strong{color:var(--ok)} .fb.no strong{color:var(--bad)}
+.next{background:var(--blue);color:var(--onblue);border:none;border-radius:14px;padding:12px 20px;font-weight:800;min-height:52px;align-self:flex-end}
+
+/* Klaviatur */
+.kb{position:relative;display:flex;width:100%;max-width:560px;margin:0 auto;height:170px;border-radius:0 0 10px 10px;border-top:8px solid var(--keyb);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.wk{flex:1;min-width:0;background:var(--keyw);border:1px solid #8b8fa3;border-top:none;border-radius:0 0 7px 7px;display:flex;align-items:flex-end;justify-content:center;padding:0 0 8px;color:var(--onkey);font-family:var(--display);font-weight:600;font-size:1.05rem}
+.wk:active{background:#e9e4d2}
+.bk{position:absolute;top:0;width:6%;height:60%;background:var(--keyb);border:none;border-radius:0 0 5px 5px;padding:0}
+.bk:active{background:#3b3d52}
+.wk.mark{background:var(--sun)}
+.wk.ok{background:#8fe0bb} .wk.no{background:#f5a59b}
+.kbhint{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:420px){.kbhint{grid-template-columns:1fr}}
+
+/* Noten */
+.staff{width:100%;max-width:360px;display:block;margin:0 auto;touch-action:manipulation}
+.staff line{stroke:var(--ink);stroke-width:1.6}
+.staff .clef{fill:var(--ink);font-family:"Noto Music","Segoe UI Symbol","Apple Symbols","Noto Sans Symbols2",serif}
+.staff .n ellipse{fill:var(--ink)} .staff .n line{stroke:var(--ink);stroke-width:2.2}
+.staff .n.good ellipse{fill:var(--ok)} .staff .n.good line{stroke:var(--ok)}
+.staff .n.miss ellipse{fill:var(--bad)} .staff .n.miss line{stroke:var(--bad)}
+.staffbox{background:var(--card);border-radius:16px;padding:8px;width:100%}
+.staffctl{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* Ergebnis */
+.score{font-family:var(--display);font-size:3.4rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.bigstars{font-size:2.2rem;letter-spacing:6px;color:var(--sun)}
+.bigstars .off{color:var(--line)}
+.endbtns{display:flex;gap:10px;flex-wrap:wrap}
+.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.6);opacity:.4}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.pop{animation:none}.tile,.playhead .bar i{transition:none}}
+</style>
+
+<div class="wrap">
+
+<!-- Übersicht -->
+<section id="home" class="wrap">
+  <header class="top">
+    <span class="eyebrow">Musik · Klasse 5f</span>
+    <h1>Musik-Trainer</h1>
+    <p class="muted">Fünf Spiele zu den Themen der Musikarbeit. Jede Runde hat 10 Aufgaben. Stell den Ton an und schalte das Handy nicht auf lautlos.</p>
+    <span class="count" id="count" hidden></span>
+  </header>
+  <div class="grid" id="tiles"></div>
+  <div class="panel" id="stand"></div>
+  <div class="panel">
+    <h2>Ensembles anhören</h2>
+    <p class="small muted">Echte Ensembles kann das Spiel nicht nachmachen. Such dir zusammen mit deinen Eltern Hörbeispiele und sag vorher laut, was du erwartest: Wer spielt oder singt da?</p>
+    <div class="links" id="hoer"></div>
+  </div>
+</section>
+
+<!-- Spiel -->
+<section id="play" class="wrap" hidden>
+  <div class="playhead">
+    <button class="ghost" id="back" type="button">← Übersicht</button>
+    <div class="bar"><i id="prog" style="width:0"></i></div>
+    <b id="num" class="small"></b>
+  </div>
+  <div class="streak" id="streak" aria-live="polite"></div>
+  <div class="stage" id="stage"></div>
+  <div class="fb" id="fb" hidden aria-live="polite"></div>
+</section>
+
+<!-- Ergebnis -->
+<section id="end" class="wrap" hidden></section>
+
+<!-- Freies Klavier -->
+<section id="piano" class="wrap" hidden>
+  <div class="playhead"><button class="ghost" id="back2" type="button">← Übersicht</button></div>
+  <h2>Freies Klavier</h2>
+  <p class="muted">Spiel einfach drauflos. Jede Taste klingt. Die Namen kannst du aus- und einblenden.</p>
+  <div id="freekb"></div>
+  <div class="staffctl"><button class="ghost" id="lbl" type="button">Namen ausblenden</button><button class="ghost" id="leiter" type="button">▶ Tonleiter vorspielen</button></div>
+  <div class="kbhint">
+    <div class="tip"><b>Zweiergruppe</b><br>Links von den zwei schwarzen Tasten liegt immer das C. Danach kommen D und E.</div>
+    <div class="tip"><b>Dreiergruppe</b><br>Links von den drei schwarzen Tasten liegt immer das F. Danach kommen G, A und H.</div>
+  </div>
+  <p class="small muted">Nach dem H fängt es wieder mit C an: C D E F G A H C …</p>
+</section>
+
+</div>
+
+<script>
+/* ---------- Helfer ---------- */
+const $=s=>document.querySelector(s);
+function el(tag,attrs,...kids){const e=document.createElement(tag);
+  for(const k in (attrs||{})){ if(k==='html') e.innerHTML=attrs[k]; else if(k==='class') e.className=attrs[k]; else e.setAttribute(k,attrs[k]); }
+  kids.forEach(c=>e.append(c)); return e;}
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ---------- Töne ---------- */
+let AC=null;
+function ctx(){ if(!AC){const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AC=new C();}
+  if(AC.state==='suspended') AC.resume(); return AC;}
+function tone(p){const a=ctx(); if(!a) return;
+  const f=p.f||330,d=p.d||.7,g=p.g||.3,t=a.currentTime+(p.at||0)+.03;
+  const o=a.createOscillator(),v=a.createGain(); o.type=p.type||'triangle'; o.frequency.value=f;
+  let node=o; if(p.lp){const fl=a.createBiquadFilter();fl.type='lowpass';fl.frequency.value=p.lp;o.connect(fl);node=fl;}
+  node.connect(v); v.connect(a.destination);
+  v.gain.setValueAtTime(0,t); v.gain.linearRampToValueAtTime(g,t+.02);
+  v.gain.setValueAtTime(g,t+Math.max(.04,d-.08)); v.gain.linearRampToValueAtTime(0,t+d);
+  o.start(t); o.stop(t+d+.05);}
+function piano(f,at){const a=ctx(); if(!a) return; const t=a.currentTime+(at||0)+.01;
+  const v=a.createGain(); v.connect(a.destination);
+  v.gain.setValueAtTime(0,t); v.gain.linearRampToValueAtTime(.4,t+.012); v.gain.exponentialRampToValueAtTime(.001,t+1.3);
+  [['triangle',1,1],['sine',2,.3]].forEach(x=>{const o=a.createOscillator(),og=a.createGain();
+    o.type=x[0];o.frequency.value=f*x[1];og.gain.value=x[2];o.connect(og);og.connect(v);o.start(t);o.stop(t+1.4);});}
+function noise(kind){const a=ctx(); if(!a) return; const t=a.currentTime+.03;
+  const len=Math.floor(a.sampleRate*1.2),buf=a.createBuffer(1,len,a.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+  const src=a.createBufferSource(); src.buffer=buf;
+  const fl=a.createBiquadFilter(),v=a.createGain(); src.connect(fl); fl.connect(v); v.connect(a.destination);
+  v.gain.setValueAtTime(0,t);
+  if(kind==='rauschen'){fl.type='lowpass';fl.frequency.value=3000;
+    v.gain.linearRampToValueAtTime(.25,t+.1);v.gain.setValueAtTime(.25,t+.8);v.gain.linearRampToValueAtTime(0,t+1.1);}
+  else if(kind==='klopfen'){fl.type='lowpass';fl.frequency.value=400;
+    [0,.25,.5].forEach(o=>{v.gain.setValueAtTime(.9,t+o);v.gain.exponentialRampToValueAtTime(.001,t+o+.12);});}
+  else{fl.type='highpass';fl.frequency.value=4000;
+    for(let o=0;o<1;o+=.09){v.gain.setValueAtTime(Math.random()*.35+.05,t+o);v.gain.linearRampToValueAtTime(.02,t+o+.07);}}
+  src.start(t); src.stop(t+1.2);}
+function fx(ok){ if(ok){tone({f:660,d:.12,g:.18,type:'sine',at:.3});tone({f:880,d:.2,g:.18,type:'sine',at:.42});}
+  else tone({f:180,d:.3,g:.2,type:'sine',at:.3}); }
+
+/* ---------- Klaviatur ---------- */
+const NAMES=['C','D','E','F','G','A','H','C','D','E'];
+const WF=[261.63,293.66,329.63,349.23,392,440,493.88,523.25,587.33,659.25];
+const BLACK={0:277.18,1:311.13,3:369.99,4:415.30,5:466.16,7:554.37,8:622.25};
+const KEYHINT={C:'Das C liegt links von der Zweiergruppe der schwarzen Tasten.',
+  D:'Das D liegt genau zwischen den zwei schwarzen Tasten der Zweiergruppe.',
+  E:'Das E liegt rechts von der Zweiergruppe.',
+  F:'Das F liegt links von der Dreiergruppe der schwarzen Tasten.',
+  G:'Das G liegt in der Dreiergruppe zwischen der ersten und zweiten schwarzen Taste.',
+  A:'Das A liegt in der Dreiergruppe zwischen der zweiten und dritten schwarzen Taste.',
+  H:'Das H liegt rechts von der Dreiergruppe.'};
+function keyboard(host,opt){opt=opt||{};
+  const kb=el('div',{class:'kb'});
+  NAMES.forEach((n,i)=>{const b=el('button',{class:'wk'+(opt.mark===i?' mark':''),type:'button','aria-label':opt.labels?('Taste '+n):('weiße Taste '+(i+1))});
+    if(opt.labels) b.append(el('span',{},n));
+    b.addEventListener('click',()=>{piano(WF[i]); if(opt.onKey) opt.onKey(i,b);}); kb.append(b);});
+  Object.keys(BLACK).forEach(k=>{const b=el('button',{class:'bk',type:'button','aria-label':'schwarze Taste',style:'left:'+((+k+1)*10-3)+'%'});
+    b.addEventListener('click',()=>piano(BLACK[k])); kb.append(b);});
+  host.append(kb); return kb;}
+
+/* ---------- Notensystem ---------- */
+const NOTE=['C','D','E','F','G','A','H','C'];
+const POS=['auf der Hilfslinie unter den Notenlinien','direkt unter der untersten Linie','auf der 1. Linie (ganz unten)','im 1. Zwischenraum','auf der 2. Linie','im 2. Zwischenraum','auf der 3. Linie (in der Mitte)','im 3. Zwischenraum'];
+const noteY=s=>150-10*s;
+function staffSVG(notes){
+  let h='<svg class="staff" viewBox="0 0 320 190" role="img" aria-label="Notenzeile">';
+  [50,70,90,110,130].forEach(y=>{h+='<line x1="10" x2="310" y1="'+y+'" y2="'+y+'"/>';});
+  h+='<text class="clef" x="14" y="131" font-size="84">\u{1D11E}</text>';
+  (notes||[]).forEach(n=>{const y=noteY(n.s),x=n.x||190;
+    h+='<g class="n '+(n.cls||'')+'">';
+    if(n.s===0) h+='<line x1="'+(x-22)+'" x2="'+(x+22)+'" y1="150" y2="150"/>';
+    h+='<ellipse cx="'+x+'" cy="'+y+'" rx="12.5" ry="9" transform="rotate(-20 '+x+' '+y+')"/>';
+    h+= n.s<6 ? '<line x1="'+(x+11.5)+'" x2="'+(x+11.5)+'" y1="'+(y-3)+'" y2="'+(y-62)+'"/>'
+              : '<line x1="'+(x-11.5)+'" x2="'+(x-11.5)+'" y1="'+(y+3)+'" y2="'+(y+62)+'"/>';
+    h+='</g>';});
+  return h+'</svg>';}
+
+/* ---------- Aufgaben ---------- */
+function playBtn(text,fn){const b=el('button',{class:'play',type:'button'},'▶ '+text); b.addEventListener('click',fn); return b;}
+
+/* 1 Klänge beschreiben */
+const BASE={f:330,d:.7,g:.3,type:'triangle',lp:0};
+const KL={
+  laut:{crit:'Lautstärke',lo:{g:.06},hi:{g:.6},words:['leiser','lauter'],pair:'laut oder leise'},
+  dauer:{crit:'Tondauer',lo:{d:.22},hi:{d:1.7},words:['kürzer','länger'],pair:'kurz oder lang'},
+  hoehe:{crit:'Tonhöhe',lo:{f:196},hi:{f:659},words:['tiefer','höher'],pair:'hoch oder tief'},
+  farbe:{crit:'Klangfarbe',lo:{type:'sine',lp:700,g:.45},hi:{type:'sawtooth',lp:7000,g:.18},words:['dunkler','heller'],pair:'hell oder dunkel'}};
+function qCompare(k){const K=KL[k],up=Math.random()<.5;
+  const a=Object.assign({},BASE,up?K.lo:K.hi),b=Object.assign({},BASE,up?K.hi:K.lo),ans=K.words[up?1:0];
+  return {key:'h-'+k,label:K.crit+' heraushören',prompt:'Hör dir beide Klänge an. Wie ist Klang 2 im Vergleich zu Klang 1?',
+    visual(h){h.append(playBtn('Klang 1',()=>tone(a)),playBtn('Klang 2',()=>tone(b)));},
+    auto(){tone(a);tone(Object.assign({},b,{at:a.d+.5}));},
+    groups:Object.values(KL).map(x=>[x.crit,x.words[0],x.words[1]]),answer:ans,
+    explain:'Klang 2 war '+ans+' als Klang 1. Das beschreibst du mit dem Kriterium '+K.crit+'.',
+    review:K.crit+': Klang 2 war '+ans};}
+function qTonGer(){const isTon=Math.random()<.5,kind=pick(['rauschen','klopfen','rascheln']),f=pick(WF);
+  const play=()=>{isTon?tone({f:f,d:.9,g:.3}):noise(kind);};
+  const nm={rauschen:'ein Rauschen',klopfen:'ein Klopfen',rascheln:'ein Rascheln wie bei Papier'}[kind];
+  return {key:'tg',label:'Ton oder Geräusch',prompt:'Ton oder Geräusch? Hör genau hin.',
+    visual(h){h.append(playBtn('Anhören',play));},auto:play,
+    options:['Ton','Geräusch'],answer:isTon?'Ton':'Geräusch',
+    explain:isTon?'Das war ein Ton. Du kannst ihn nachsingen, er hat eine bestimmte Tonhöhe.'
+                 :'Das war '+nm+', also ein Geräusch. Du kannst es nicht nachsingen, die Tonhöhe ist unbestimmt.',
+    review:isTon?'Ton: kann man nachsingen':'Geräusch: kann man nicht nachsingen'};}
+function qKrit(k){const K=KL[k];
+  return {key:'w-'+k,label:'Kriterium '+K.crit,prompt:'Ein Klang ist '+K.pair+'. Welches Kriterium beschreibt das?',
+    options:shuffle(Object.values(KL).map(x=>x.crit)),answer:K.crit,
+    explain:K.pair.replace(' oder ',' – ')+' gehört zu: '+K.crit+'.',review:K.pair+' → '+K.crit};}
+function makeKlang(){const ks=Object.keys(KL);
+  return shuffle([...ks.map(qCompare),qCompare(pick(ks)),qTonGer(),qTonGer(),qTonGer(),...shuffle(ks).slice(0,2).map(qKrit)]);}
+
+/* 2 Musik-Orte */
+const ORTE=[['Orchestermusik','im Konzerthaus'],['ein Hochzeitsmarsch','im Rathaus'],['eine Rockband','beim Open-Air-Konzert'],
+  ['ein Jazz-Trio','in der Jazzkneipe'],['Orgelmusik','in der Kirche'],['eine Opernarie','im Opernhaus'],
+  ['eine Blaskapelle','im Park'],['ein gemeinsam gesungenes Lied','in der Schule'],['Straßenmusiker','auf der Straße']];
+const CONFLICT=[[1,4],[0,5],[2,6],[7,4],[8,6],[8,2],[3,8]];
+function others(i){return shuffle(ORTE.map((_,j)=>j).filter(j=>j!==i&&!CONFLICT.some(c=>(c[0]===i&&c[1]===j)||(c[1]===i&&c[0]===j)))).slice(0,3);}
+function qOrt(i,dir){const p=ORTE[i],o=others(i);
+  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  return dir? {key:'o'+i,label:cap(p[0])+' ↔ '+p[1],prompt:'Wo erklingt das in der Musikstadt: '+p[0]+'?',
+      options:shuffle([p[1],...o.map(j=>ORTE[j][1])]),answer:p[1],explain:cap(p[0])+' hörst du '+p[1]+'.',review:cap(p[0])+' → '+p[1]}
+    : {key:'o'+i,label:cap(p[0])+' ↔ '+p[1],prompt:'Was hörst du '+p[1]+'?',
+      options:shuffle([p[0],...o.map(j=>ORTE[j][0])]),answer:p[0],explain:cap(p[1])+' erklingt '+p[0]+'.',review:cap(p[1])+' → '+p[0]};}
+function makeStadt(){const idx=shuffle(ORTE.map((_,i)=>i));
+  return shuffle([...idx.map(i=>qOrt(i,Math.random()<.5)),qOrt(idx[0],Math.random()<.5)]).slice(0,10);}
+
+/* 3 Ensembles */
+const ENS=[
+ ['def','Begriff Ensemble','Was ist ein Ensemble?',['Eine Gruppe, in der Musiker zusammen musizieren','Ein einzelnes Instrument','Ein Ort, an dem Konzerte stattfinden','Ein besonders lautes Musikstück'],'Ensemble nennt man eine Gruppe, in der Musiker zusammen musizieren.'],
+ ['trio','Trio = 3','Wie viele Musiker spielen in einem Trio?',['3','2','4','5'],'Trio = 3 Musiker, Quartett = 4, Quintett = 5.'],
+ ['quart','Quartett = 4','Wie viele Musiker gehören zu einem Quartett?',['4','3','5','8'],'Quartett = 4 Musiker.'],
+ ['quint','Quintett = 5','Fünf Musiker spielen zusammen. Wie heißt diese Besetzung?',['Quintett','Quartett','Trio','Chor'],'5 Musiker = Quintett.'],
+ ['chor','Chor','Was ist ein Chor?',['Eine Gemeinschaft von Singenden, in der jede Stimme mehrfach besetzt ist','Eine große Jazz-Band','Vier Streichinstrumente','Eine Gruppe aus Blechbläsern'],'Im Chor wird gesungen, und jede Stimme ist mehrfach besetzt.'],
+ ['vokal','Vokalensemble','Welches Ensemble ist ein reines Vokalensemble?',['Chor','Streichquartett','Blaskapelle','Big Band'],'Vokal heißt: Es wird nur gesungen. Das passt zum Chor.'],
+ ['instr','Instrumentalensemble','Welches Ensemble ist ein reines Instrumentalensemble?',['Streichquartett','Chor','Rockband mit Sängerin','Kirchenchor'],'Im Streichquartett spielen nur Instrumente, niemand singt.'],
+ ['gemischt','gemischte Besetzung','Eine Rockband mit Gesang, Gitarre, Bass und Schlagzeug: Welche Art der Besetzung ist das?',['gemischt vokal und instrumental','rein vokal','rein instrumental','Kammerorchester'],'Gesang und Instrumente zusammen: gemischt vokal und instrumental.'],
+ ['sinf','Sinfonieorchester','Wie heißt ein groß besetztes Orchester?',['Sinfonieorchester','Kammerorchester','Big Band','Quintett'],'Groß besetzt = Sinfonieorchester, kleiner besetzt = Kammerorchester.'],
+ ['kammer','Kammerorchester','Wie heißt ein kleiner besetztes Orchester?',['Kammerorchester','Sinfonieorchester','Blaskapelle','Trio'],'Das kleiner besetzte Orchester heißt Kammerorchester.'],
+ ['gruppen','Instrumentengruppen im Orchester','Welche Instrumentengruppen spielen im Sinfonieorchester zusammen?',['Streich-, Blas- und Schlaginstrumente','Nur Blasinstrumente','Nur Streichinstrumente','Nur Gesangsstimmen'],'Im Sinfonieorchester spielen verschiedene Instrumentengruppen zusammen.'],
+ ['bigband','Big Band','Was ist eine Big Band?',['Eine große Jazz-Band, in der die Blasinstrumente mehrfach besetzt sind','Ein großer Chor','Ein kleines Orchester mit Streichern','Eine Rockband mit drei Musikern'],'Big Band = große Jazz-Band mit mehrfach besetzten Blasinstrumenten.'],
+ ['rhythm','Rhythmusgruppe der Big Band','Welche Instrumente bilden in der Big Band die Rhythmusgruppe?',['Klavier, Schlagzeug, Kontrabass','Trompeten und Posaunen','Saxofone und Klarinetten','Violinen und Flöten'],'Die Rhythmusgruppe: Klavier, Schlagzeug, Kontrabass.'],
+ ['reed','Reed-Section','Was spielt in der Reed-Section einer Big Band?',['Holzblasinstrumente, vor allem Saxofone','Blechblasinstrumente wie Trompeten','Klavier und Kontrabass','Trommeln und Becken'],'Reed-Section = Holzblasinstrumente: Saxofone, auch Klarinetten oder Querflöten.'],
+ ['brass','Brass-Section','Was spielt in der Brass-Section einer Big Band?',['Trompeten und Posaunen','Saxofone','Klavier und Schlagzeug','Geigen'],'Brass-Section = Blechblasinstrumente: Trompeten und Posaunen.'],
+ ['blasher','Herkunft der Blaskapelle','Woraus sind Blaskapellen ursprünglich entstanden?',['Aus Militärkapellen','Aus Kirchenchören','Aus Jazz-Bands','Aus Opernorchestern'],'Blaskapellen entstanden aus europäischen Militärkapellen.'],
+ ['blasinst','Instrumente der Blaskapelle','Welche Instrumente spielen in einer Blaskapelle?',['Blechbläser, Holzbläser und Schlagwerk','Nur Streichinstrumente','Klavier, Gitarre und Gesang','Nur Trommeln'],'Blechbläser (z. B. Trompeten, Tuba), Holzbläser (Flöten, Klarinetten) und Schlagwerk.'],
+ ['jazztrio','Jazz-Trio','Wie viele Musiker spielen in einem Jazz-Trio?',['3','4','5','mehr als 10'],'Trio bedeutet immer drei Musiker.'],
+ ['streich','Streichquartett','Wie viele Musiker spielen in einem Streichquartett?',['4','3','5','2'],'Quartett = 4. Im Streichquartett spielen vier Streichinstrumente.']
+];
+function makeEns(){return shuffle(ENS).slice(0,10).map(e=>({key:e[0],label:e[1],prompt:e[2],one:e[3].some(o=>o.length>26),
+  options:shuffle(e[3]),answer:e[3][0],explain:e[4],review:e[2]+' → '+e[3][0]}));}
+
+/* 4 Tasten */
+function qFindKey(name){return {key:'t'+name,label:'Taste '+name,prompt:'Tippe auf die Taste '+name+'.',
+  keys:i=>NAMES[i]===name,name:name,explain:KEYHINT[name],review:'Taste '+name+': '+KEYHINT[name]};}
+function qNameKey(i){const n=NAMES[i];return {key:'t'+n,label:'Taste '+n,prompt:'Wie heißt die gelb markierte Taste?',
+  visual(h){keyboard(h,{mark:i});},seven:true,options:NOTE.slice(0,7),answer:n,explain:KEYHINT[n],review:'Taste '+n+': '+KEYHINT[n]};}
+function makeTasten(){const seven=shuffle(NOTE.slice(0,7));
+  return shuffle([...seven.slice(0,5).map(qFindKey),...shuffle([0,1,2,3,4,5,6,7,8,9]).slice(0,5).map(qNameKey)]);}
+
+/* 5 Noten */
+function qRead(s){const n=NOTE[s];return {key:'n'+s,label:'Note '+n+' '+(s===0?'(tief) ':s===7?'(hoch) ':'')+'lesen',prompt:'Wie heißt diese Note?',
+  visual(h){h.append(el('div',{class:'staffbox',html:staffSVG([{s:s}])}));},seven:true,options:NOTE.slice(0,7),answer:n,
+  after(){piano(WF[s]);},explain:'Das ist ein '+n+'. Die Note sitzt '+POS[s]+'.',review:'Note '+POS[s]+' → '+n};}
+function qWrite(s){const n=NOTE[s],both=n==='C';
+  return {key:'n'+s,label:'Note '+n+' schreiben',prompt:'Setze die Note '+n+' in die Notenzeile.',
+    staff:both?[0,7]:[s],after(){piano(WF[s]);},
+    explain:both?'Das C steht auf der Hilfslinie unter den Notenlinien. Das hohe C steht im 3. Zwischenraum.':'Das '+n+' sitzt '+POS[s]+'.',
+    review:'Note '+n+' → '+(both?POS[0]:POS[s])};}
+function makeNoten(){const a=shuffle([0,1,2,3,4,5,6,7]),b=shuffle([0,1,2,3,4,5,6]);
+  return shuffle([...a.slice(0,5).map(qRead),...b.slice(0,5).map(qWrite)]);}
+
+const GAMES={
+ klang:{ic:'🔊',t:'Klang-Detektiv',d:'Klänge hören und beschreiben: Lautstärke, Tondauer, Tonhöhe, Klangfarbe',make:makeKlang,
+   tip:'Merk dir die vier Kriterien mit ihren Wortpaaren: Lautstärke (laut – leise), Tondauer (kurz – lang), Tonhöhe (hoch – tief), Klangfarbe (hell – dunkel). Schau im Buch auf S. 10 in den Infokasten.'},
+ stadt:{ic:'🏙️',t:'Musikstadt',d:'Welche Musik erklingt an welchem Ort?',make:makeStadt,
+   tip:'Geh den Stadtplan im Buch auf S. 14/15 mit dem Finger ab und sag zu jedem Ort laut, welche Musik dort erklingt.'},
+ ens:{ic:'🎺',t:'Ensemble-Quiz',d:'Trio, Chor, Orchester, Big Band, Blaskapelle',make:makeEns,
+   tip:'Lies im Buch S. 16/17 die Texte zu Orchester, Chor, Blaskapelle und Big Band noch einmal und erkläre sie jemandem mit eigenen Worten. Nimm auch deine Tabelle aus der Mappe dazu.'},
+ tasten:{ic:'🎹',t:'Tasten-Jagd',d:'Tasten finden und benennen',make:makeTasten,
+   tip:'Such immer zuerst die schwarzen Tasten: Links von der Zweiergruppe liegt das C, links von der Dreiergruppe das F. Von dort zählst du weiter: C D E – F G A H.'},
+ noten:{ic:'🎼',t:'Noten-Werkstatt',d:'Noten lesen und selbst in die Notenzeile setzen',make:makeNoten,
+   tip:'Fang beim C auf der Hilfslinie an. Von dort geht es Schritt für Schritt nach oben, immer abwechselnd Zwischenraum und Linie: C, D, E, F, G, A, H, C.'}
+};
+const ORDER=['klang','stadt','ens','tasten','noten'];
+
+/* ---------- Speicher ---------- */
+let DB={};
+try{DB=JSON.parse(localStorage.getItem('musik5f')||'{}')||{};}catch(e){DB={};}
+function save(){try{localStorage.setItem('musik5f',JSON.stringify(DB));}catch(e){}}
+function g(id){return DB[id]||(DB[id]={plays:0,best:0,last:0,items:{}});}
+
+/* ---------- Ansichten ---------- */
+function show(id){['home','play','end','piano'].forEach(v=>{$('#'+v).hidden=v!==id;}); window.scrollTo(0,0);}
+function starsHTML(n){let h='';for(let i=0;i<3;i++)h+=i<n?'★':'<span class="off">★</span>';return h;}
+const starsFor=s=>s>=10?3:s>=8?2:s>=5?1:0;
+
+function renderHome(){
+  const tiles=$('#tiles'); tiles.innerHTML='';
+  ORDER.forEach(id=>{const G=GAMES[id],st=DB[id];
+    const b=el('button',{class:'tile',type:'button'},el('span',{class:'ic'},G.ic),el('span',{class:'t'},G.t),el('span',{class:'d'},G.d),
+      el('span',{class:'stars',html:starsHTML(st?starsFor(st.best):0)+(st&&st.plays?' <span class="muted small" style="letter-spacing:0">Bestwert '+st.best+'/10</span>':'')}));
+    b.addEventListener('click',()=>start(id)); tiles.append(b);});
+  const f=el('button',{class:'tile free',type:'button'},el('span',{class:'ic'},'🎵'),el('span',{class:'t'},'Freies Klavier'),el('span',{class:'d'},'Tasten ausprobieren und Töne hören, ganz ohne Punkte'));
+  f.addEventListener('click',()=>{show('piano');}); tiles.append(f);
+
+  const st=$('#stand'); st.innerHTML=''; st.append(el('h2',{},'So stehst du'));
+  const played=ORDER.filter(id=>DB[id]&&DB[id].plays);
+  if(!played.length){ st.append(el('p',{class:'muted'},'Noch keine Runde gespielt. Fang mit dem Klang-Detektiv an. Nach jeder Runde siehst du hier, was schon sitzt und was du noch üben solltest.')); return; }
+  ORDER.forEach(id=>{const s=DB[id]; let r=0,w=0; if(s) for(const k in s.items){r+=s.items[k].r;w+=s.items[k].w;}
+    const pct=r+w?Math.round(r/(r+w)*100):0;
+    st.append(el('div',{class:'bar-row'},el('span',{},GAMES[id].t),el('div',{class:'bar',html:'<i style="width:'+pct+'%"></i>'}),el('b',{},s&&s.plays?pct+' %':'–')));});
+  st.append(el('p',{class:'small muted'},'Der Balken zeigt, wie viele deiner Antworten insgesamt richtig waren.'));
+  const open=ORDER.filter(id=>!(DB[id]&&DB[id].plays));
+  let weak=[]; played.forEach(id=>{const it=DB[id].items; for(const k in it){const x=it[k]; if(x.w>0&&x.w/(x.r+x.w)>=.34) weak.push({t:GAMES[id].t,l:x.label,w:x.w});}});
+  weak.sort((a,b)=>b.w-a.w);
+  let tip;
+  if(weak.length){ tip=el('div',{class:'tip'},el('b',{},'Das solltest du noch üben')); const ul=el('ul',{class:'plain'});
+    weak.slice(0,4).forEach(x=>ul.append(el('li',{},x.t+': '+x.l))); tip.append(ul); }
+  else tip=el('div',{class:'tip',html:'<b>Stark!</b> Bei den gespielten Themen gibt es gerade nichts, das du oft falsch machst.'});
+  st.append(tip);
+  if(open.length) st.append(el('p',{},'Noch nicht gespielt: '+open.map(id=>GAMES[id].t).join(', ')+'.'));
+  else{const lo=ORDER.slice().sort((a,b)=>DB[a].best-DB[b].best)[0];
+    st.append(el('p',{},DB[lo].best>=10?'Du hast überall schon einmal 10 von 10 geschafft. Spiel jedes Thema vor der Arbeit noch einmal zur Sicherheit.':'Nächstes Ziel: '+GAMES[lo].t+' (Bestwert bisher '+DB[lo].best+'/10).'));}
+  const rs=el('button',{class:'ghost small',type:'button'},'Lernstand löschen'); let armed=false;
+  rs.addEventListener('click',()=>{ if(!armed){armed=true;rs.textContent='Wirklich löschen? Noch einmal tippen';return;} DB={};save();renderHome();});
+  st.append(rs);
+}
+
+/* ---------- Spielablauf ---------- */
+let S=null,locked=false;
+function start(id){ctx(); S={id:id,qs:GAMES[id].make(),i:0,score:0,streak:0,miss:[]}; show('play'); renderQ();}
+function renderQ(){const q=S.qs[S.i],stage=$('#stage'),fb=$('#fb'); locked=false;
+  stage.innerHTML=''; fb.hidden=true; fb.className='fb';
+  $('#prog').style.width=(S.i/S.qs.length*100)+'%'; $('#num').textContent=(S.i+1)+' / '+S.qs.length;
+  $('#streak').textContent=S.streak>=3?'🔥 '+S.streak+' richtig in Folge':'';
+  stage.append(el('p',{class:'prompt'},q.prompt));
+  if(q.visual){const v=el('div',{class:'visual'}); q.visual(v); stage.append(v);}
+  if(q.groups){ const box=el('div',{style:'display:flex;flex-direction:column;gap:8px'});
+    q.groups.forEach(gr=>{const row=el('div',{class:'grp'},el('span',{},gr[0])); [gr[1],gr[2]].forEach(o=>row.append(optBtn(o,q,box))); box.append(row);}); stage.append(box);}
+  else if(q.options){ const box=el('div',{class:'opts'+(q.seven?' seven':q.one?' one':'')}); q.options.forEach(o=>box.append(optBtn(o,q,box))); stage.append(box);}
+  else if(q.keys){ const host=el('div',{}); const kb=keyboard(host,{onKey(i,b){ if(locked) return; const ok=q.keys(i);
+      kb.querySelectorAll('.wk').forEach((k,j)=>{ if(q.keys(j)) k.classList.add('ok'); }); if(!ok) b.classList.add('no'); finish(ok,q); }}); stage.append(host);}
+  else if(q.staff){ staffInput(stage,q); }
+  if(q.auto) q.auto();
+}
+function optBtn(text,q,box){const b=el('button',{class:'opt',type:'button'},text);
+  b.addEventListener('click',()=>{ if(locked) return; const ok=text===q.answer;
+    box.querySelectorAll('.opt').forEach(x=>{x.disabled=true; if(x.textContent===q.answer) x.classList.add('right');});
+    if(!ok) b.classList.add('wrong'); finish(ok,q);}); return b;}
+function staffInput(stage,q){let cur=null;
+  const box=el('div',{class:'staffbox'}); const draw=extra=>{box.innerHTML=staffSVG((cur===null?[]:[{s:cur,cls:extra&&extra.cls}]).concat(extra&&extra.more||[]));};
+  draw(); stage.append(box);
+  box.addEventListener('click',e=>{ if(locked) return; const sv=box.querySelector('svg'); if(!sv) return; const r=sv.getBoundingClientRect();
+    const y=(e.clientY-r.top)/r.height*190; cur=Math.max(0,Math.min(7,Math.round((150-y)/10))); draw(); piano(WF[cur]); });
+  const up=el('button',{class:'ghost',type:'button','aria-label':'Note höher'},'▲ höher'),dn=el('button',{class:'ghost',type:'button','aria-label':'Note tiefer'},'▼ tiefer'),
+        chk=el('button',{class:'play',type:'button'},'Prüfen');
+  up.addEventListener('click',()=>{ if(locked) return; cur=cur===null?3:Math.min(7,cur+1); draw(); piano(WF[cur]); });
+  dn.addEventListener('click',()=>{ if(locked) return; cur=cur===null?3:Math.max(0,cur-1); draw(); piano(WF[cur]); });
+  chk.addEventListener('click',()=>{ if(locked) return; if(cur===null){ $('#streak').textContent='Tippe zuerst in die Notenzeile, um die Note zu setzen.'; return; }
+    const ok=q.staff.indexOf(cur)>=0; draw(ok?{cls:'good'}:{cls:'miss',more:[{s:q.staff[0],cls:'good',x:250}]}); finish(ok,q); });
+  stage.append(el('p',{class:'small muted',style:'text-align:center'},'Tippe in die Notenzeile oder benutze die Pfeile.'),el('div',{class:'staffctl'},dn,up,chk));
+}
+function finish(ok,q){ locked=true;
+  const st=g(S.id),it=st.items[q.key]||(st.items[q.key]={r:0,w:0,label:q.label}); it.label=q.label; ok?it.r++:it.w++; save();
+  if(ok){S.score++;S.streak++;}else{S.streak=0;S.miss.push(q.review);}
+  if(q.after) q.after(); else fx(ok);
+  const fb=$('#fb'); fb.innerHTML=''; fb.className='fb '+(ok?'ok':'no'); fb.hidden=false;
+  const praise=S.streak>=5?'Richtig! Du bist in Fahrt.':pick(['Richtig!','Genau!','Stimmt!','Super!']);
+  fb.append(el('strong',{},ok?praise:'Noch nicht ganz.'),el('p',{},q.explain));
+  const last=S.i===S.qs.length-1,nx=el('button',{class:'next',type:'button'},last?'Zur Auswertung':'Weiter →');
+  nx.addEventListener('click',()=>{ if(last) finishRound(); else{S.i++;renderQ();window.scrollTo(0,0);} });
+  fb.append(nx); nx.focus({preventScroll:true}); fb.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function finishRound(){const st=g(S.id),G=GAMES[S.id],n=S.qs.length,sc=S.score; st.plays++; st.last=sc; const rec=sc>st.best&&st.plays>1; st.best=Math.max(st.best,sc); save();
+  const e=$('#end'); e.innerHTML='';
+  const msg=sc===n?'Perfekt, alles richtig! Dieses Thema sitzt.':sc>=8?'Stark! Es fehlen nur noch Kleinigkeiten.':sc>=5?'Guter Anfang. Schau dir unten deine Fehler an und spiel gleich noch eine Runde.':'Das Thema braucht noch Übung. Lies den Tipp und probier es noch einmal. Mit jeder Runde wird es leichter.';
+  e.append(el('span',{class:'eyebrow'},G.t+' · Auswertung'),
+    el('div',{class:'score pop'},sc+' / '+n),el('div',{class:'bigstars pop',html:starsHTML(starsFor(sc))}),
+    el('p',{},(rec?'Neuer Bestwert! ':'')+msg));
+  if(S.miss.length){const p=el('div',{class:'panel'},el('h3',{},'Das war noch falsch')); const ul=el('ul',{class:'plain'});
+    S.miss.forEach(m=>ul.append(el('li',{},m))); p.append(ul,el('p',{class:'small muted'},'So ist es richtig. Lies die Zeilen einmal laut vor.')); e.append(p);}
+  e.append(el('div',{class:'tip'},el('b',{},sc===n?'So bleibst du fit':'So wirst du besser'),el('p',{},sc===n?'Spiel das Thema morgen noch einmal. Wenn es dann wieder klappt, kannst du es für die Arbeit abhaken.':G.tip)));
+  const a=el('button',{class:'play',type:'button'},'Noch eine Runde'),b=el('button',{class:'ghost',type:'button'},'Zur Übersicht');
+  a.addEventListener('click',()=>start(S.id)); b.addEventListener('click',()=>{renderHome();show('home');});
+  e.append(el('div',{class:'endbtns'},a,b));
+  show('end'); if(sc>=8){[523,659,784,1047].forEach((f,i)=>piano(f,.15*i));}
+}
+
+/* ---------- Start ---------- */
+$('#back').addEventListener('click',()=>{renderHome();show('home');});
+$('#back2').addEventListener('click',()=>{renderHome();show('home');});
+let showLbl=true;
+function freeKb(){const h=$('#freekb'); h.innerHTML=''; keyboard(h,{labels:showLbl});}
+$('#lbl').addEventListener('click',()=>{showLbl=!showLbl; $('#lbl').textContent=showLbl?'Namen ausblenden':'Namen einblenden'; freeKb();});
+$('#leiter').addEventListener('click',()=>{const ks=$('#freekb').querySelectorAll('.wk');
+  for(let i=0;i<8;i++){piano(WF[i],i*.42); setTimeout(()=>{ks[i].classList.add('mark'); setTimeout(()=>ks[i].classList.remove('mark'),380);},i*420);}});
+freeKb();
+['Sinfonieorchester','Kammerorchester','Chor','Big Band','Blaskapelle','Streichquartett','Jazz-Trio'].forEach(n=>{
+  $('#hoer').append(el('a',{href:'https://www.youtube.com/results?search_query='+encodeURIComponent(n+' Musik'),target:'_blank',rel:'noopener'},n));});
+(function(){const ex=new Date(2026,10,20),now=new Date(),d=Math.round((ex-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5),c=$('#count');
+  if(d<0) return; c.hidden=false; c.textContent=d>1?'Noch '+d+' Tage bis zur Musikarbeit am 20.11.':d===1?'Morgen ist die Musikarbeit':'Heute ist die Musikarbeit. Viel Erfolg!';})();
+renderHome();
+</script>
+
+</body>
+</html>
